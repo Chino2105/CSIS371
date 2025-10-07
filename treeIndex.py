@@ -1,6 +1,7 @@
 import os
 import re
 import xml.etree.ElementTree as ET
+from collections import defaultdict
 
 import nltk
 from nltk.corpus import wordnet
@@ -20,7 +21,7 @@ from nltk.tokenize import word_tokenize
 # and makes it searchable by creating a list of unique words.
 
 text = ""                                                # Stores the content of the TEXT tag
-uniqueWords = []                                         # Stores unique words found in the TEXT
+uniqueWords = {}                                         # Stores unique words found in the TEXT
 stopwords = set(nltk.corpus.stopwords.words('english'))  # Set of common stopwords to ignore
 lemmatizer = WordNetLemmatizer()                         # Initialize the lemmatizer
 directory = "Docs"                                       # Directory containing XML files
@@ -50,87 +51,108 @@ def get_wordnet_pos(tag):
         return wordnet.NOUN  # default to noun
     
 class Node:
-    def __init__(self, keys=None, children=None):
-        self.keys = keys or []
+    # Initializes a node with entries and children
+    def __init__(self, entries=None, children=None):
+        self.entries = entries or []  
         self.children = children or []
 
+    # Checks if the node is a leaf
     def is_leaf(self):
         return len(self.children) == 0
 
-    def insert_key(self, key):
-        self.keys.append(key)
-        self.keys.sort()
+    # Inserts an entry into the node
+    def insert_entry(self, term, doc_id):
+        for i, (t, plist) in enumerate(self.entries):
+            if t == term:
+                plist.append(uniqueWords[term])
+                return
+            
+        self.entries.append((term, uniqueWords[term]))
+        self.entries.sort(key=lambda x: x[0])
+
 
 class TwoThreeTree:
+
+    # Initializes an empty 2-3 tree
     def __init__(self):
         self.root = None
 
-    def search(self, node, key):
-        if node is None:
-            return False
-        if key in node.keys:
-            return True
-        if node.is_leaf():
-            return False
-        if key < node.keys[0]:
-            return self.search(node.children[0], key)
-        elif len(node.keys) == 1 or key < node.keys[1]:
-            return self.search(node.children[1], key)
-        else:
-                return self.search(node.children[2], key)
-
-    def insert(self, key):
+    # Inserts a term into the tree
+    def insert(self, term):
         if self.root is None:
-            self.root = Node([key])
+            self.root = Node([(term, uniqueWords[term])])
         else:
-            self.root = self._insert(self.root, key)
+            self.root = self._insert(self.root, term, uniqueWords[term])
 
-    def _insert(self, node, key):
+    # Inserts a term into the tree and returns the new root if the tree was split
+    def _insert(self, node, term, doc_id):
         if node.is_leaf():
-            node.insert_key(key)
-            if len(node.keys) <= 2:
+            node.insert_entry(term, doc_id)
+            if len(node.entries) <= 2:
                 return node
             return self._split(node)
         else:
-            if key < node.keys[0]:
+            # Find correct child
+            if term < node.entries[0][0]:
                 idx = 0
-            elif len(node.keys) == 1 or key < node.keys[1]:
+            elif len(node.entries) == 1 or term < node.entries[1][0]:
                 idx = 1
             else:
                 idx = 2
 
-            child = self._insert(node.children[idx], key)
+            child = self._insert(node.children[idx], term, doc_id)
             node.children[idx] = child
-
-            if len(child.keys) == 3:
+            if len(child.entries) > 2:
                 return self._split_internal(node, idx)
             return node
-
+        
+    # Splits a leaf node
     def _split(self, node):
-        left = Node([node.keys[0]])
-        right = Node([node.keys[2]])
-        return Node([node.keys[1]], [left, right])
+        left = Node([node.entries[0]])
+        right = Node([node.entries[2]])
+        return Node([node.entries[1]], [left, right])
 
+    # Splits an internal node
     def _split_internal(self, parent, child_index):
         child = parent.children[child_index]
-        left = Node([child.keys[0]])
-        right = Node([child.keys[2]])
-        middle_key = child.keys[1]
+        left = Node([child.entries[0]])
+        right = Node([child.entries[2]])
+        middle_entry = child.entries[1]
 
-        if child.is_leaf():
-            left.children = []
-            right.children = []
-        else:
-            left.children = child.children[:2]
-            right.children = child.children[2:]
+        left.children = child.children[:2]
+        right.children = child.children[2:]
 
-        parent.keys.insert(child_index, middle_key)
+        parent.entries.insert(child_index, middle_entry)
         parent.children[child_index:child_index+1] = [left, right]
 
-        if len(parent.keys) > 2:
+        if len(parent.entries) > 2:
             return self._split(parent)
         return parent
 
+    # Searches for a term in the tree and returns its posting list
+    def search(self, node, term):
+        if node is None:
+            return None
+        for i, (t, plist) in enumerate(node.entries):
+            if t == term:
+                return plist
+        if node.is_leaf():
+            return None
+        if term < node.entries[0][0]:
+            return self.search(node.children[0], term)
+        elif len(node.entries) == 1 or term < node.entries[1][0]:
+            return self.search(node.children[1], term)
+        else:
+            return self.search(node.children[2], term)
+        
+# Class for postings in the posting list
+class Posting:
+    def __init__(self, doc_id):
+        self.doc_id = doc_id
+
+    def __str__(self):
+        return str(self.doc_id)
+    
 # Goes through each file in the specified directory
 for name in os.listdir(directory):
     filepath = os.path.join(directory, name)
@@ -155,16 +177,25 @@ for name in os.listdir(directory):
                 case "DOCNO":
                     metadata["DOCNO"] = child.text
     
+        # Tokenizes, cleans, and lemmatizes the text
         tokens = clean_tokens(word_tokenize(metadata.get("TEXT", "")))
         tagged_tokens = nltk.pos_tag(tokens)
         lemmatized = [lemmatizer.lemmatize(token, get_wordnet_pos(pos)) for token, pos in tagged_tokens]
         for word in lemmatized:
+            doc_id = metadata.get("DOCNO", "")
+            posting = str(Posting(doc_id))
             if word not in uniqueWords:
-                uniqueWords.append(word)
+                uniqueWords[word] = [posting]  # [word, postingList]
+            else:
+                uniqueWords[word].append(posting)
+
+print(uniqueWords)
 
 tree = TwoThreeTree()
 for word in uniqueWords:
+    posting_list = uniqueWords[word]
     tree.insert(word) 
+print(tree.search(tree.root, "magnet"))
 
         
 
