@@ -7,10 +7,10 @@ from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('averaged_perceptron_tagger')
-nltk.download('wordnet')
+#nltk.download('punkt')
+#nltk.download('stopwords')
+#nltk.download('averaged_perceptron_tagger')
+#nltk.download('wordnet')
 
 
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -49,7 +49,87 @@ def get_wordnet_pos(tag):
     else:
         return wordnet.NOUN  # default to noun
     
+class Node:
+    def __init__(self, keys=None, children=None):
+        self.keys = keys or []
+        self.children = children or []
 
+    def is_leaf(self):
+        return len(self.children) == 0
+
+    def insert_key(self, key):
+        self.keys.append(key)
+        self.keys.sort()
+
+class TwoThreeTree:
+    def __init__(self):
+        self.root = None
+
+    def search(self, node, key):
+        if node is None:
+            return False
+        if key in node.keys:
+            return True
+        if node.is_leaf():
+            return False
+        if key < node.keys[0]:
+            return self.search(node.children[0], key)
+        elif len(node.keys) == 1 or key < node.keys[1]:
+            return self.search(node.children[1], key)
+        else:
+                return self.search(node.children[2], key)
+
+    def insert(self, key):
+        if self.root is None:
+            self.root = Node([key])
+        else:
+            self.root = self._insert(self.root, key)
+
+    def _insert(self, node, key):
+        if node.is_leaf():
+            node.insert_key(key)
+            if len(node.keys) <= 2:
+                return node
+            return self._split(node)
+        else:
+            if key < node.keys[0]:
+                idx = 0
+            elif len(node.keys) == 1 or key < node.keys[1]:
+                idx = 1
+            else:
+                idx = 2
+
+            child = self._insert(node.children[idx], key)
+            node.children[idx] = child
+
+            if len(child.keys) == 3:
+                return self._split_internal(node, idx)
+            return node
+
+    def _split(self, node):
+        left = Node([node.keys[0]])
+        right = Node([node.keys[2]])
+        return Node([node.keys[1]], [left, right])
+
+    def _split_internal(self, parent, child_index):
+        child = parent.children[child_index]
+        left = Node([child.keys[0]])
+        right = Node([child.keys[2]])
+        middle_key = child.keys[1]
+
+        if child.is_leaf():
+            left.children = []
+            right.children = []
+        else:
+            left.children = child.children[:2]
+            right.children = child.children[2:]
+
+        parent.keys.insert(child_index, middle_key)
+        parent.children[child_index:child_index+1] = [left, right]
+
+        if len(parent.keys) > 2:
+            return self._split(parent)
+        return parent
 
 # Goes through each file in the specified directory
 for name in os.listdir(directory):
@@ -82,7 +162,9 @@ for name in os.listdir(directory):
             if word not in uniqueWords:
                 uniqueWords.append(word)
 
-print(uniqueWords)
+tree = TwoThreeTree()
+for word in uniqueWords:
+    tree.insert(word) 
 
         
 
