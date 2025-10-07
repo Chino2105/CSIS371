@@ -7,16 +7,17 @@ from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-nltk.download('punkt')       # for tokenization
-nltk.download('wordnet')     # for lemmatization
-nltk.download('omw-1.4')     # for WordNet lemmatizer
-nltk.download('averaged_perceptron_tagger')  # for POS tagging
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 10/6/2024
+# File: treeIndex.py
+# Description: This program processes a collection of documents in XML format, extracts text content,
+# and makes it searchable by creating a list of unique words.
 
-text = ""                        # Stores the content of the TEXT tag
-uniqueWords = []                 # Stores unique words found in the TEXT
-stopwords = set(nltk.corpus.stopwords.words('english'))
-lemmatizer = WordNetLemmatizer()
-directory = "Docs"
+text = ""                                                # Stores the content of the TEXT tag
+uniqueWords = []                                         # Stores unique words found in the TEXT
+stopwords = set(nltk.corpus.stopwords.words('english'))  # Set of common stopwords to ignore
+lemmatizer = WordNetLemmatizer()                         # Initialize the lemmatizer
+directory = "Docs"                                       # Directory containing XML files
 
 # Cleans tokens by removing punctuation and unwanted characters, removing stopwords, and making lowercase
 def clean_tokens(token_list):
@@ -29,6 +30,7 @@ def clean_tokens(token_list):
             cleaned.append(word)
     return cleaned
 
+# Maps POS tags to WordNet POS tags for lemmatization
 def get_wordnet_pos(tag):
     if tag.startswith('J'):
         return wordnet.ADJ
