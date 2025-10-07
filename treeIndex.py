@@ -7,6 +7,12 @@ from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
+nltk.download('punkt')
+nltk.download('stopwords')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+
+
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 10/6/2024
 # File: treeIndex.py
@@ -42,6 +48,8 @@ def get_wordnet_pos(tag):
         return wordnet.ADV
     else:
         return wordnet.NOUN  # default to noun
+    
+
 
 # Goes through each file in the specified directory
 for name in os.listdir(directory):
@@ -74,7 +82,7 @@ for name in os.listdir(directory):
             if word not in uniqueWords:
                 uniqueWords.append(word)
 
-    print (uniqueWords)
+print(uniqueWords)
 
         
 
