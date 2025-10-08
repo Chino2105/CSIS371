@@ -8,6 +8,8 @@ from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
+from permuterms import generate_permuterms, permuterm_index, search_permuterm
+
 #nltk.download('punkt')
 #nltk.download('stopwords')
 #nltk.download('averaged_perceptron_tagger')
@@ -131,11 +133,23 @@ class TwoThreeTree:
 
     # Searches for a term in the tree and returns its posting list
     def search(self, node, term):
+        # Base case: empty node
         if node is None:
             return None
+        
+        # Handle wildcard search
+        if "*" in term:
+            results = search_permuterm(term, permuterm_index)
+            results_str = ""
+            for res in results:
+                results_str += self.search(self.root, res) + "\n"
+            return results_str.strip()
+        
+        # Search for the term in the current node
         for i, (t, plist) in enumerate(node.entries):
             if t == term:
-                return plist
+                return term + ": " + plist.__str__()
+            
         if node.is_leaf():
             return None
         if term < node.entries[0][0]:
@@ -186,19 +200,17 @@ for name in os.listdir(directory):
             posting = str(Posting(doc_id))
             if word not in uniqueWords:
                 uniqueWords[word] = [posting]  # [word, postingList]
+                for rotation in generate_permuterms(word):
+                    permuterm_index[rotation] = word
             else:
                 uniqueWords[word].append(posting)
-
-print(uniqueWords)
 
 tree = TwoThreeTree()
 for word in uniqueWords:
     posting_list = uniqueWords[word]
     tree.insert(word) 
-print(tree.search(tree.root, "magnet"))
 
-        
-
-
-
-
+input_query = input("Search query: ").strip()
+while input_query != "":
+    print(tree.search(tree.root, input_query))
+    input_query = input("Search query: ").strip()
