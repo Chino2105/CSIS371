@@ -1,3 +1,5 @@
+import re
+
 # permuterms.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 10/6/2024
@@ -7,20 +9,16 @@ def generate_permuterms(term):
     term = term + "$"
     return [term[i:] + term[:i] for i in range(len(term))]
 
-# Example index
 permuterm_index = {}
-terms = ["cat", "bat", "rat", "car"]
-for term in terms:
-    for rotation in generate_permuterms(term):
-        permuterm_index[rotation] = term
+original_terms = set()
 
-def wildcard_to_prefix(query):
-    if "*" not in query:
-        return query + "$"
-    parts = query.split("*")
-    return parts[1] + "$" + parts[0]
+def wildcard_to_regex(query):
+    escaped = re.escape(query)
+    regex = "^" + escaped.replace("\\*", ".*") + "$"
+    return regex
 
-def search_permuterm(query, index):
-    prefix = wildcard_to_prefix(query)
-    matches = [index[rotation] for rotation in index if rotation.startswith(prefix)]
-    return list(set(matches))  # remove duplicates
+def search_permuterm(query, index, original_terms):
+    pattern = re.compile(wildcard_to_regex(query), re.IGNORECASE)
+    matches = [term for term in original_terms if pattern.match(term)]
+    return matches
+

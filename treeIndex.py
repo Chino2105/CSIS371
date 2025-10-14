@@ -8,7 +8,8 @@ from nltk.corpus import wordnet
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 
-from permuterms import generate_permuterms, permuterm_index, search_permuterm
+from permuterms import (generate_permuterms, original_terms, permuterm_index,
+                        search_permuterm)
 
 #nltk.download('punkt')
 #nltk.download('stopwords')
@@ -139,7 +140,7 @@ class TwoThreeTree:
         
         # Handle wildcard search
         if "*" in term:
-            results = search_permuterm(term, permuterm_index)
+            results = search_permuterm(term, permuterm_index, original_terms)
             results_str = ""
             for res in results:
                 results_str += self.search(self.root, res) + "\n"
@@ -200,6 +201,7 @@ for name in os.listdir(directory):
             posting = str(Posting(doc_id))
             if word not in uniqueWords:
                 uniqueWords[word] = [posting]  # [word, postingList]
+                original_terms.add(word)
                 for rotation in generate_permuterms(word):
                     permuterm_index[rotation] = word
             else:
@@ -214,3 +216,5 @@ input_query = input("Search query: ").strip()
 while input_query != "":
     print(tree.search(tree.root, input_query))
     input_query = input("Search query: ").strip()
+
+    
