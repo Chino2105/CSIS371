@@ -1,10 +1,17 @@
 <DOC>
-<DOCNO>Doc1</DOCNO>
-<TEXT>At very low temperatures, superconductors have zero resistance, but they can also repel
-an external magnetic field, in such a way that a spinning magnet can be held in a levitated
-position.</TEXT>
+<DOCNO>d1</DOCNO>
+<TEXT>for english model retireval have a relevance model while vector space model retrieval</TEXT>
 </DOC>
 <DOC>
-<DOCNO>Doc2</DOCNO>
-<TEXT>If a small magnet is brought near a superconductor, it will be repelled.</TEXT>
+<DOCNO>d2</DOCNO>
+<TEXT>r-precision measure is relevant to average precision measure</TEXT>
+</DOC>
+<DOCNO>d3</DOCNO>
+<TEXT>most efficient retrieval models are language model and vector space model</TEXT>
+</DOC>
+<DOCNO>d4</DOCNO>
+<TEXT>english is the most efficient language</TEXT>
+</DOC>
+<DOCNO>d5</DOCNO>
+<TEXT>retrieval efficiency is measured by average precision</TEXT>
 </DOC>
