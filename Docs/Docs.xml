@@ -6,12 +6,15 @@
 <DOCNO>d2</DOCNO>
 <TEXT>r-precision measure is relevant to average precision measure</TEXT>
 </DOC>
+<DOC>
 <DOCNO>d3</DOCNO>
 <TEXT>most efficient retrieval models are language model and vector space model</TEXT>
 </DOC>
+<DOC>
 <DOCNO>d4</DOCNO>
 <TEXT>english is the most efficient language</TEXT>
 </DOC>
+<DOC>
 <DOCNO>d5</DOCNO>
 <TEXT>retrieval efficiency is measured by average precision</TEXT>
 </DOC>
