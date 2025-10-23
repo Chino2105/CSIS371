@@ -1,4 +1,6 @@
 import os
+import requests
+import shutil
 
 # Splits a large JSONL file into smaller chunks based on file size.
 def split_jsonl(input_file_path, max_size_gb=1):
@@ -69,12 +71,19 @@ def split_jsonl(input_file_path, max_size_gb=1):
     except Exception as e:
         print(f"An error occurred: {e}")
 
+
 # --- Main execution ---
 if __name__ == "__main__":
     
     # CURPUS FILE.
-    CORPUSFILE = "trec-tot-2025-corpus.jsonl" 
-    
+    CORPUSFILE = "trec-tot-2025-corpus.jsonl"
+
+    # Check Curpus file, if not, asks to download.
+    if not os.path.exists("./" + CORPUSFILE):
+        print("CORPUS Not Found.")
+        print("Download Corpus: https://zenodo.org/records/15356599/files/trec-tot-2025-corpus.jsonl.gz?download=1")
+        exit()
+
     # Desired GB
     SPLIT_SIZE_GB = 0.5
 
