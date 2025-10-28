@@ -1,12 +1,13 @@
+import json
+import math
 import os
+import pickle
 import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
-import nltk
 from nltk.corpus import wordnet
-from nltk.stem import WordNetLemmatizer
-from nltk.tokenize import word_tokenize
 
 from permuterms import (generate_permuterms, original_terms, permuterm_index,
                         search_permuterm)
@@ -18,19 +19,114 @@ from permuterms import (generate_permuterms, original_terms, permuterm_index,
 
 
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
-# Version: 10/6/2024
+# Version: 10/27/2024
 # File: treeIndex.py
 # Description: This program processes a collection of documents in XML format, extracts text content,
 # and makes it searchable by creating a list of unique words.
 
-text = ""                                                # Stores the content of the TEXT tag
-uniqueWords = {}                                         # Stores unique words found in the TEXT
-stopwords = set(nltk.corpus.stopwords.words('english'))  # Set of common stopwords to ignore
-lemmatizer = WordNetLemmatizer()                         # Initialize the lemmatizer
-directory = "Docs"                                       # Directory containing XML files
+directory = "TestCorpus"                                     # Directory containing miniCorpus JSONL files
+
+# Processes a single JSONL file and returns local index and document vectors
+def process_file(filepath):
+    print(f"Processing {filepath} ...", flush=True)
+    import nltk
+    from nltk.corpus import stopwords, wordnet
+    from nltk.stem import WordNetLemmatizer
+    from nltk.tokenize import word_tokenize
+
+    stopwords_set = set(stopwords.words('english'))
+    lemmatizer = WordNetLemmatizer()
+
+    local_index = {}
+    local_vectors = defaultdict(dict)
+
+    for obj, line_no in stream_jsonl(filepath):
+        doc_id = next((str(obj[k]) for k in ('DOCNO', 'docno', 'id', 'doc_id') if k in obj and obj[k] is not None), f"{os.path.basename(filepath)}:{line_no}")
+        text_field = next((obj[k] for k in ('TEXT', 'text', 'content', 'body') if k in obj and obj[k] is not None), None)
+        if not text_field:
+            continue
+
+        tokens = clean_tokens(word_tokenize(str(text_field)), stopwords_set)
+        tagged = nltk.pos_tag(tokens)
+        lemmatized = [lemmatizer.lemmatize(tok, get_wordnet_pos(pos)) for tok, pos in tagged]
+
+        for word in lemmatized:
+            if not word:
+                continue
+            if word not in local_index:
+                local_index[word] = Posting(word)
+            posting = local_index[word]
+            if doc_id not in posting.doc_id:
+                posting.doc_id.append(doc_id)
+                posting.term_frequency[doc_id] = 1
+            else:
+                posting.term_frequency[doc_id] += 1
+            tf = posting.term_frequency[doc_id]
+            log_tf = 1 + math.log10(tf)
+            posting.log_term_frequency[doc_id] = log_tf
+            local_vectors[doc_id][word] = log_tf
+
+    print(f"Finished {filepath}", flush=True)
+    return local_index, local_vectors
+
+# Processes files in parallel and merges local indices into a global index
+def parallel_index(directory):
+    futures = []
+    with ProcessPoolExecutor() as executor:
+        for name in os.listdir(directory):
+            if name.startswith('miniCorpus_') and name.endswith('.jsonl'):
+                filepath = os.path.join(directory, name)
+                futures.append(executor.submit(process_file, filepath))
+
+        merged_index = {}
+        merged_vectors = defaultdict(dict)
+
+        for future in as_completed(futures):
+            local_index, local_vectors = future.result()
+            for term, posting in local_index.items():
+                if term not in merged_index:
+                    merged_index[term] = posting
+                else:
+                    merged_posting = merged_index[term]
+                    for doc_id in posting.doc_id:
+                        if doc_id not in merged_posting.doc_id:
+                            merged_posting.doc_id.append(doc_id)
+                            merged_posting.term_frequency[doc_id] = posting.term_frequency[doc_id]
+                        else:
+                            merged_posting.term_frequency[doc_id] += posting.term_frequency[doc_id]
+                        tf = merged_posting.term_frequency[doc_id]
+                        merged_posting.log_term_frequency[doc_id] = 1 + math.log10(tf)
+
+            for doc_id, vec in local_vectors.items():
+                for term, weight in vec.items():
+                    merged_vectors[doc_id][term] = merged_vectors[doc_id].get(term, 0) + weight
+
+    return merged_index, merged_vectors
+
+# Streams JSONL file line by line, yielding each JSON object
+def stream_jsonl(filepath):
+    with open(filepath, 'r', encoding='utf-8') as f:
+        for line_no, line in enumerate(f, start=1):
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                obj = json.loads(line)
+                yield obj, line_no
+            except json.JSONDecodeError:
+                continue  # Skip malformed lines
+
+# Normalizes document vectors to unit length
+def normalize_vectors(index, vectors):
+    for doc_id, term_weights in vectors.items():
+        norm = math.sqrt(sum(w ** 2 for w in term_weights.values()))
+        if norm == 0:
+            continue
+        for term, weight in term_weights.items():
+            index[term].log_term_frequency[doc_id] = weight / norm
 
 # Cleans tokens by removing punctuation and unwanted characters, removing stopwords, and making lowercase
-def clean_tokens(token_list):
+def clean_tokens(token_list, stopwords):
     cleaned = []
     for word in token_list:
         # Remove punctuation and apostrophe+char at end
@@ -64,33 +160,34 @@ class Node:
         return len(self.children) == 0
 
     # Inserts an entry into the node
-    def insert_entry(self, term, doc_id):
+    def insert_entry(self, term, posting):
         for i, (t, plist) in enumerate(self.entries):
             if t == term:
-                plist.append(uniqueWords[term])
+                plist.append(posting)
                 return
             
-        self.entries.append((term, uniqueWords[term]))
+        self.entries.append((term, posting))
         self.entries.sort(key=lambda x: x[0])
 
 
 class TwoThreeTree:
 
     # Initializes an empty 2-3 tree
-    def __init__(self):
+    def __init__(self, index):
         self.root = None
+        self.index = index
 
     # Inserts a term into the tree
     def insert(self, term):
         if self.root is None:
-            self.root = Node([(term, uniqueWords[term])])
+            self.root = Node([(term, self.index[term])])
         else:
-            self.root = self._insert(self.root, term, uniqueWords[term])
+            self.root = self._insert(self.root, term, self.index[term])
 
     # Inserts a term into the tree and returns the new root if the tree was split
     def _insert(self, node, term, doc_id):
         if node.is_leaf():
-            node.insert_entry(term, doc_id)
+            node.insert_entry(term, self.index[term])
             if len(node.entries) <= 2:
                 return node
             return self._split(node)
@@ -162,59 +259,74 @@ class TwoThreeTree:
         
 # Class for postings in the posting list
 class Posting:
-    def __init__(self, doc_id):
-        self.doc_id = doc_id
+    def __init__(self, term):
+        self.term = term
+        self.doc_id = []
+        self.term_frequency = {}
+        self.log_term_frequency = {}
 
     def __str__(self):
-        return str(self.doc_id)
-    
-# Goes through each file in the specified directory
-for name in os.listdir(directory):
-    filepath = os.path.join(directory, name)
-    with open(filepath, 'r', encoding='utf-8') as f:
-        content = f.read()
+        # Show doc IDs and frequencies
+        return f"docs={self.doc_id}, tf={self.term_frequency}"
 
-    # Split into individual <DOC> blocks
-    docs = content.split('<DOC>')
-    for doc in docs:
-        if not doc.strip():
-            continue  # Skip empty chunks
 
-        xml_fragment = '<DOC>' + doc  # Re-add the tag
+# Add a document-level dictionary to store document vectors
+document_vectors = defaultdict(dict)  # Format: {doc_id: {term: log_tf}}
 
-        # Parses the XML fragment and extracts metadata
-        root = ET.fromstring(xml_fragment)
-        metadata = {}
-        for child in root:
-            match child.tag:
-                case "TEXT":
-                    metadata["TEXT"] = child.text
-                case "DOCNO":
-                    metadata["DOCNO"] = child.text
-    
-        # Tokenizes, cleans, and lemmatizes the text
-        tokens = clean_tokens(word_tokenize(metadata.get("TEXT", "")))
-        tagged_tokens = nltk.pos_tag(tokens)
-        lemmatized = [lemmatizer.lemmatize(token, get_wordnet_pos(pos)) for token, pos in tagged_tokens]
-        for word in lemmatized:
-            doc_id = metadata.get("DOCNO", "")
-            posting = str(Posting(doc_id))
-            if word not in uniqueWords:
-                uniqueWords[word] = [posting]  # [word, postingList]
-                original_terms.add(word)
-                for rotation in generate_permuterms(word):
-                    permuterm_index[rotation] = word
-            else:
-                uniqueWords[word].append(posting)
+if __name__ == "__main__":
+    from nltk.corpus import stopwords
+    query_stopwords = set(stopwords.words('english'))
+                      
+    # Check if index already exists
+    if os.path.exists("index.pkl") and os.path.exists("vectors.pkl"):
+        print("Loading existing index from disk...")
+        with open("index.pkl", "rb") as f:
+            uniqueWords = pickle.load(f)
+        with open("vectors.pkl", "rb") as f:
+            document_vectors = pickle.load(f)
 
-tree = TwoThreeTree()
-for word in uniqueWords:
-    posting_list = uniqueWords[word]
-    tree.insert(word) 
+    # Step 1: Index the corpus
+    else:
+        print("Indexing corpus in parallel...")
+        uniqueWords, document_vectors = parallel_index(directory)
+        normalize_vectors(uniqueWords, document_vectors)
 
-input_query = input("Search query: ").strip()
-while input_query != "":
-    print(tree.search(tree.root, input_query))
-    input_query = input("Search query: ").strip()
+        # Save for next time
+        with open("index.pkl", "wb") as f:
+            pickle.dump(uniqueWords, f)
+        with open("vectors.pkl", "wb") as f:
+            pickle.dump(document_vectors, f)
 
-    
+    print(f"Indexed {len(uniqueWords)} unique terms across {len(document_vectors)} documents.")
+
+    # Save index and vectors
+    with open("index.pkl", "wb") as f:
+        pickle.dump(uniqueWords, f)
+
+    with open("vectors.pkl", "wb") as f:
+        pickle.dump(document_vectors, f)
+
+    print("Index serialized to disk.")
+
+    print("Normalization complete.")
+
+    # Step 2: Build the 2-3 tree (optional if you still want it)
+    # Build permuterm index for wildcard queries
+    generate_permuterms(list(uniqueWords.keys()))
+    tree = TwoThreeTree(uniqueWords)
+    for word in uniqueWords:
+        tree.insert(word)
+
+    print("2-3 Tree built. Ready for queries.")
+
+    from nltk.tokenize import word_tokenize
+
+    # Step 3: Query loop
+    while True:
+        input_query = input("Search query: ").strip()
+        if not input_query:
+            break
+        terms = clean_tokens(word_tokenize(input_query), query_stopwords)
+        for term in input_query.split():
+            result = tree.search(tree.root, term)
+            print(result if result else f"{term} not found.")
