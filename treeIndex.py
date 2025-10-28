@@ -24,7 +24,7 @@ from permuterms import (generate_permuterms, original_terms, permuterm_index,
 # Description: This program processes a collection of documents in JSONL format, extracts text content,
 # and makes it searchable by creating a list of unique words.
 
-directory = "Docs"                                     # Directory containing miniCorpus JSONL files
+directory = "TestCorpus"                                     # Directory containing miniCorpus JSONL files
 
 # Processes a single JSONL file and returns local index and document vectors
 def process_file(filepath):
