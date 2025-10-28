@@ -3,7 +3,7 @@ import requests
 import shutil
 
 # Splits a large JSONL file into smaller chunks based on file size.
-def split_jsonl(input_file_path, max_size_gb=1):
+def split_jsonl(input_file_path, max_size_gb = 1.0, testing = False):
     
     # Calculate the max size in bytes
     max_size_bytes = max_size_gb * 1024 * 1024 * 1024
@@ -39,12 +39,16 @@ def split_jsonl(input_file_path, max_size_gb=1):
                     line_bytes = len(line.encode('utf-8'))
                     
                     # Check if adding this line would exceed the max size.
-                    # We also check 'current_size > 0' to ensure that if a single
+                    # check 'current_size > 0' to ensure that if a single
                     # line is larger than max_size_gb, it still gets written
                     # to its own file.
                     if current_size + line_bytes > max_size_bytes and current_size > 0:
                         # Close the current file
                         outfile.close()
+
+                        # For Testing:
+                        if testing:
+                            return
                         
                         # Increment the file number and open a new file
                         file_number += 1
@@ -52,6 +56,7 @@ def split_jsonl(input_file_path, max_size_gb=1):
                         
                         # Reset the current size for the new file
                         current_size = 0
+
                         
                     # Write the line to the current output file
                     outfile.write(line)
@@ -72,22 +77,22 @@ def split_jsonl(input_file_path, max_size_gb=1):
         print(f"An error occurred: {e}")
 
 
-# --- Main execution ---
-if __name__ == "__main__":
-    
+def main(testing = False, SPLIT_SIZE_GB = 1.0):
     # CURPUS FILE.
     CORPUSFILE = "trec-tot-2025-corpus.jsonl"
 
     # Check Curpus file, if not, asks to download.
     if not os.path.exists("./" + CORPUSFILE):
         print("CORPUS Not Found.")
-        print("Download Corpus: https://zenodo.org/records/15356599/files/trec-tot-2025-corpus.jsonl.gz?download=1")
+        print("Download Corpus and Drag into projects directory.\nLink: https://zenodo.org/records/15356599/files/trec-tot-2025-corpus.jsonl.gz?download=1")
         exit()
-
-    # Desired GB
-    SPLIT_SIZE_GB = 0.5
 
     print(f"Starting to split '{CORPUSFILE}' into {SPLIT_SIZE_GB}GB chunks...")
     
     # Run the splitting function
-    split_jsonl(CORPUSFILE, SPLIT_SIZE_GB)
+    split_jsonl(CORPUSFILE, SPLIT_SIZE_GB, testing)
+
+# Split Corpus to mini corpuses, 1GB Each
+if __name__ == "__main__":
+    print("Alright")
+    main()
