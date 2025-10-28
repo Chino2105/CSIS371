@@ -4,7 +4,7 @@ import os
 import pickle
 import re
 import xml.etree.ElementTree as ET
-from collections import defaultdict
+from collections import Counter, defaultdict
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 from nltk.corpus import wordnet
@@ -21,10 +21,10 @@ from permuterms import (generate_permuterms, original_terms, permuterm_index,
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 10/27/2024
 # File: treeIndex.py
-# Description: This program processes a collection of documents in XML format, extracts text content,
+# Description: This program processes a collection of documents in JSONL format, extracts text content,
 # and makes it searchable by creating a list of unique words.
 
-directory = "TestCorpus"                                     # Directory containing miniCorpus JSONL files
+directory = "Docs"                                     # Directory containing miniCorpus JSONL files
 
 # Processes a single JSONL file and returns local index and document vectors
 def process_file(filepath):
@@ -74,7 +74,7 @@ def parallel_index(directory):
     futures = []
     with ProcessPoolExecutor() as executor:
         for name in os.listdir(directory):
-            if name.startswith('miniCorpus_') and name.endswith('.jsonl'):
+            if name.endswith('.jsonl'):
                 filepath = os.path.join(directory, name)
                 futures.append(executor.submit(process_file, filepath))
 
@@ -123,7 +123,8 @@ def normalize_vectors(index, vectors):
         if norm == 0:
             continue
         for term, weight in term_weights.items():
-            index[term].log_term_frequency[doc_id] = weight / norm
+            posting = index[term]
+            posting.normalized_weight[doc_id] = weight / norm
 
 # Cleans tokens by removing punctuation and unwanted characters, removing stopwords, and making lowercase
 def clean_tokens(token_list, stopwords):
@@ -247,9 +248,11 @@ class TwoThreeTree:
         for i, (t, plist) in enumerate(node.entries):
             if t == term:
                 return term + ": " + plist.__str__()
-            
+
+        # If leaf node and term not found
         if node.is_leaf():
             return None
+        # Recur to the appropriate child
         if term < node.entries[0][0]:
             return self.search(node.children[0], term)
         elif len(node.entries) == 1 or term < node.entries[1][0]:
@@ -264,10 +267,12 @@ class Posting:
         self.doc_id = []
         self.term_frequency = {}
         self.log_term_frequency = {}
+        self.normalized_weight = {}
 
     def __str__(self):
         # Show doc IDs and frequencies
-        return f"docs={self.doc_id}, tf={self.term_frequency}"
+        result = f"0 1 {self.doc_id} "
+        return result
 
 
 # Add a document-level dictionary to store document vectors
@@ -279,7 +284,7 @@ if __name__ == "__main__":
                       
     # Check if index already exists
     if os.path.exists("index.pkl") and os.path.exists("vectors.pkl"):
-        print("Loading existing index from disk...")
+        #print("Loading existing index from disk...")
         with open("index.pkl", "rb") as f:
             uniqueWords = pickle.load(f)
         with open("vectors.pkl", "rb") as f:
@@ -287,8 +292,9 @@ if __name__ == "__main__":
 
     # Step 1: Index the corpus
     else:
-        print("Indexing corpus in parallel...")
+        #print("Indexing corpus in parallel...")
         uniqueWords, document_vectors = parallel_index(directory)
+
         normalize_vectors(uniqueWords, document_vectors)
 
         # Save for next time
@@ -297,7 +303,7 @@ if __name__ == "__main__":
         with open("vectors.pkl", "wb") as f:
             pickle.dump(document_vectors, f)
 
-    print(f"Indexed {len(uniqueWords)} unique terms across {len(document_vectors)} documents.")
+    #print(f"Indexed {len(uniqueWords)} unique terms across {len(document_vectors)} documents.")
 
     # Save index and vectors
     with open("index.pkl", "wb") as f:
@@ -306,9 +312,9 @@ if __name__ == "__main__":
     with open("vectors.pkl", "wb") as f:
         pickle.dump(document_vectors, f)
 
-    print("Index serialized to disk.")
+    #print("Index serialized to disk.")
 
-    print("Normalization complete.")
+    #print("Normalization complete.")
 
     # Step 2: Build the 2-3 tree (optional if you still want it)
     # Build permuterm index for wildcard queries
@@ -317,7 +323,7 @@ if __name__ == "__main__":
     for word in uniqueWords:
         tree.insert(word)
 
-    print("2-3 Tree built. Ready for queries.")
+    #print("2-3 Tree built. Ready for queries.")
 
     from nltk.tokenize import word_tokenize
 
@@ -326,7 +332,44 @@ if __name__ == "__main__":
         input_query = input("Search query: ").strip()
         if not input_query:
             break
-        terms = clean_tokens(word_tokenize(input_query), query_stopwords)
-        for term in input_query.split():
-            result = tree.search(tree.root, term)
-            print(result if result else f"{term} not found.")
+        
+        # Get all terms without stopwords
+        if "*" not in input_query:
+            terms = clean_tokens(word_tokenize(input_query), query_stopwords)
+        else:
+            terms = input_query.split()
+            terms_to_add = []
+            for term in terms:
+                if "*" not in term:
+                    term_cleaned = clean_tokens([term], query_stopwords)
+                else:
+                    terms_to_add += search_permuterm(term, permuterm_index, original_terms)
+            terms.extend(terms_to_add)
+
+        # Compute log-TF and normalize query vector
+        query_tf = Counter(terms)
+        query_log_tf = {term: 1 + math.log10(freq) for term, freq in query_tf.items()}
+        norm = math.sqrt(sum(w ** 2 for w in query_log_tf.values()))
+        query_normalized = {term: w / norm for term, w in query_log_tf.items()}
+
+        # Compute query weights using TF-IDF
+        N = len(document_vectors)  # total number of documents
+        query_weights = {}
+        doc_weights = defaultdict(float)
+
+        for term in query_normalized:
+            if term in uniqueWords:
+                posting = uniqueWords[term]
+                docs_with_term = posting.doc_id
+                df = len(docs_with_term)
+                idf = math.log10(N / df) if df > 0 else 0
+                query_weights[term] = query_normalized[term] * idf
+                for doc in docs_with_term:
+                        doc_weights[doc] += query_weights[term] * posting.normalized_weight.get(doc, 0)
+            else:
+                query_weights[term] = 0  # term not in corpus
+
+        ranked_docs = sorted(doc_weights.items(), key=lambda x: x[1], reverse=True)
+
+        for rank, (doc_id, score) in enumerate(ranked_docs, start=1):
+            print(f"0 1 {doc_id} {rank} {score:.4f} Group3")
