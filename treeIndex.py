@@ -24,7 +24,15 @@ from permuterms import (generate_permuterms, original_terms, permuterm_index,
 # Description: This program processes a collection of documents in XML format, extracts text content,
 # and makes it searchable by creating a list of unique words.
 
-directory = "TestCorpus"                                     # Directory containing miniCorpus JSONL files
+directory = "CORPUS"                                     # Directory containing miniCorpus JSONL files
+
+# If no CORPUS Directory
+if (not os.path.isdir(directory)):
+    from SplitCorpus import main
+
+    # True <--- Testing (1 miniCorpus File)
+    # 0.5 <---- miniCorpus's Size (1 ≈ GB)
+    main(True, 0.5)
 
 # Processes a single JSONL file and returns local index and document vectors
 def process_file(filepath):
