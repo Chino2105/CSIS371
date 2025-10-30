@@ -7,3 +7,4 @@ vectors.pkl
 CORPUS_split
 CORPUS_converted 
 .env
+indexes/
