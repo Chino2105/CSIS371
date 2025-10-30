@@ -7,7 +7,8 @@ from pyserini.search.lucene import LuceneSearcher
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 10/29/2024
 # Description: This program processes a collection of documents in JSONL format, extracts text content,
-# and makes it searchable by creating a list of unique words.
+# and makes it searchable by creating a list of unique words and indexing the documents using Pyserini.
+# Results are displayed in TREC format and ranked using the BM25 algorithm.
 
 index_dir = 'indexes/myindex'                       # Directory to store the index
 
