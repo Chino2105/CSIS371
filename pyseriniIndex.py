@@ -22,7 +22,7 @@ if __name__ == "__main__":
         "python", "-m", "pyserini.index.lucene",
         "--collection", "JsonCollection",                 
         "--input", "CORPUS_converted",                              # Input directory with JSONL files
-        "--index", "indexes/myindex",                         # Output index directory
+        "--index", "indexes/myindex",                               # Output index directory
         "--generator", "DefaultLuceneDocumentGenerator",
         "--threads", "8"
         ])
