@@ -11,6 +11,8 @@ from pyserini.search.lucene import LuceneSearcher
 
 index_dir = 'indexes/myindex'                       # Directory to store the index
 
+#__import__('os').system('pip install pyserini')
+
 if __name__ == "__main__":
 
     # Check if index already exists
@@ -36,7 +38,7 @@ if __name__ == "__main__":
         if not hits:
             print("No results found.")
         for i, hit in enumerate(hits):
-            print(f"101 Q0 {hit.docid} {i+1} {hit.score:.4f} baseline")
+            print(f"1 0 {hit.docid} {i+1} {hit.score:.4f} baseline")
         input_query = input("\nSearch query: ").strip()
         
     
