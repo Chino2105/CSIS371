@@ -1,7 +1,9 @@
 trec-tot-2025-corpus.jsonl
-.DS_Store
-CORPUS
+Original_CORPUS
 __pycache__
 index.pkl
 tempCodeRunnerFile.py
 vectors.pkl
+CORPUS_split
+CORPUS_converted 
+.env
