@@ -38,7 +38,7 @@ if __name__ == "__main__":
         if not hits:
             print("No results found.")
         for i, hit in enumerate(hits):
-            print(f"1 0 {hit.docid} {i+1} {hit.score:.4f} baseline")
+            print(f"0 1 {hit.docid} {i+1} {hit.score:.4f} baseline")
         input_query = input("\nSearch query: ").strip()
         
     
