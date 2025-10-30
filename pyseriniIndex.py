@@ -20,9 +20,9 @@ if __name__ == "__main__":
     if not os.path.exists(index_dir) or not os.path.exists(os.path.join(index_dir, "segments_1")):
         subprocess.run([
         "python", "-m", "pyserini.index.lucene",
-        "--collection", "JsonCollection",
-        "--input", "TestCorpus",
-        "--index", "indexes/myindex",
+        "--collection", "JsonCollection",                 
+        "--input", "CORPUS_converted",                              # Input directory with JSONL files
+        "--index", "indexes/myindex",                         # Output index directory
         "--generator", "DefaultLuceneDocumentGenerator",
         "--threads", "8"
         ])
