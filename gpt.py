@@ -1,6 +1,7 @@
-from openai import OpenAI
-from dotenv import load_dotenv
 import os
+
+from dotenv import load_dotenv
+from openai import OpenAI
 
 load_dotenv() # Load Envirmonemtal Vars
 
@@ -13,6 +14,3 @@ def sendGPT(text):
     )
     
     return response.output_text
-
-
-print(sendGPT("Say hi (For Testing)"))
