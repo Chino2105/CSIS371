@@ -1,6 +1,13 @@
 import os
-import requests
 import shutil
+
+import requests
+
+# File: SplitCorpus.py
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 11/5/2024
+# Description: This program splits a large JSONL corpus file into smaller chunks 
+# based on a specified maximum file size.
 
 # Splits a large JSONL file into smaller chunks based on file size.
 def split_jsonl(input_file_path, max_size_gb = 1.0, testing = False):

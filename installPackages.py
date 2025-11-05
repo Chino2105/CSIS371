@@ -1,4 +1,11 @@
 import os
+
+# File: installPackages.py
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 11/5/2024
+# Description: This program reads a list of required Python packages from a text file
+# and installs any that are not already present in the current environment.
+
 with open('packagesUsed.txt', 'r') as file:
     content = file.read()
 
