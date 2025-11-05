@@ -12,6 +12,8 @@ import gpt
 # Description: This program decomposes user queries into structured components
 # using a combination of GPT and spaCy-based rule matching.
 
+# IMPORTANT: run "python -m spacy download en_core_web_sm" to download the spaCy model.
+
 # Load spaCy
 nlp = spacy.load("en_core_web_sm")
 
