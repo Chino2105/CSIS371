@@ -3,7 +3,7 @@ import subprocess
 
 # File: pyseriniIndex.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
-# Version: 10/29/2024
+# Version: 11/6/2024
 # Description: This program processes a collection of documents in JSONL format, extracts text content,
 # and makes it searchable by creating a list of unique words and indexing the documents using Pyserini.
 # Results are displayed in TREC format and ranked using the BM25 algorithm.
@@ -20,7 +20,8 @@ if __name__ == "__main__":
         "--input", "CORPUS_converted",                              # Input directory with JSONL files
         "--index", "indexes/myindex",                               # Output index directory
         "--generator", "DefaultLuceneDocumentGenerator",
-        "--threads", "8"
+        "--threads", "12",
+        "--storeDocvectors",
         ])
 
         
