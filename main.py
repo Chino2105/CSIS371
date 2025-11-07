@@ -1,5 +1,6 @@
 import pyseriniIndex
 import searcher
+from installPackages import installPackages
 
 # File: main.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -8,6 +9,9 @@ import searcher
 # decomposes them into structured components using GPT, and searches the indexed documents using Pyserini.
 
 def main():
+    # Install Packages
+    installPackages()
+
     # Ensure the index is created
     pyseriniIndex.__name__ == "__main__"
 
