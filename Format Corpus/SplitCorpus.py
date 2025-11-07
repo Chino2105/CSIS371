@@ -1,7 +1,4 @@
 import os
-import shutil
-
-import requests
 
 # File: SplitCorpus.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez

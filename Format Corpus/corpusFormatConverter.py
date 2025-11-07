@@ -6,7 +6,7 @@ import os
 # Version: 10/29/2024
 # Description: This program converts a corpus of JSONL documents into a format compatible with Pyserini.
 
-input_dir = "CORPUS_split"
+input_dir = "CORPUS"
 output_dir = "CORPUS_converted"
 
 os.makedirs(output_dir, exist_ok=True)
