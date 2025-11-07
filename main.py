@@ -1,6 +1,6 @@
+import installPackages
 import pyseriniIndex
 import searcher
-from installPackages import installPackages
 
 # File: main.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -10,7 +10,7 @@ from installPackages import installPackages
 
 def main():
     # Install Packages
-    installPackages()
+    installPackages.__name__ == "__main__"
 
     # Ensure the index is created
     pyseriniIndex.__name__ == "__main__"
