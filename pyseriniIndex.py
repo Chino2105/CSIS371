@@ -1,8 +1,6 @@
 import os
 import subprocess
 
-from pyserini.search.lucene import LuceneSearcher
-
 # File: pyseriniIndex.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 10/29/2024
@@ -11,8 +9,6 @@ from pyserini.search.lucene import LuceneSearcher
 # Results are displayed in TREC format and ranked using the BM25 algorithm.
 
 index_dir = 'indexes/myindex'                       # Directory to store the index
-
-#__import__('os').system('pip install pyserini')
 
 if __name__ == "__main__":
 
@@ -27,19 +23,5 @@ if __name__ == "__main__":
         "--threads", "8"
         ])
 
-
-    # Create a searcher to search index
-    searcher = LuceneSearcher('indexes/myindex')
-    searcher.set_bm25(k1=0.9, b=0.4)
-
-    # Interactive search loop
-    input_query = input("Search query: ").strip()
-    while input_query != "":
-        hits = searcher.search(input_query, k=10)
-        if not hits:
-            print("No results found.")
-        for i, hit in enumerate(hits):
-            print(f"0 1 {hit.docid} {i+1} {hit.score:.4f} baseline")
-        input_query = input("\nSearch query: ").strip()
         
     
