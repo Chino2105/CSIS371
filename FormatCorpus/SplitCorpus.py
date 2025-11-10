@@ -81,7 +81,7 @@ def split_jsonl(input_file_path, max_size_gb = 1.0, testing = False):
         print(f"An error occurred: {e}")
 
 
-def main(testing = False, SPLIT_SIZE_GB = 1.0):
+def split(testing = False, SPLIT_SIZE_GB = 1.0):
     # CURPUS FILE.
     CORPUSFILE = "trec-tot-2025-corpus.jsonl"
 
@@ -95,8 +95,3 @@ def main(testing = False, SPLIT_SIZE_GB = 1.0):
     
     # Run the splitting function
     split_jsonl(CORPUSFILE, SPLIT_SIZE_GB, testing)
-
-# Split Corpus to mini corpuses, 1GB Each
-if __name__ == "__main__":
-    print("Alright")
-    main()

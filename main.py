@@ -1,6 +1,7 @@
 from packageInstaller import installPackages
 from pyseriniIndex import index
 from searcher import search
+from os import path
 
 # File: main.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -9,6 +10,18 @@ from searcher import search
 # decomposes them into structured components using GPT, and searches the indexed documents using Pyserini.
 
 def main():
+
+    # Check for corpus split.
+    if (not path.exists("./CORPUS")):
+        from FormatCorpus.SplitCorpus import split
+        split()
+
+    # Check for corpus formatter converter
+    if (not path.exists("./CORPUS_converted")):
+        from FormatCorpus.corpusFormatConverter import convert
+        convert()
+
+    exit()
     # Install Packages
     installPackages()
 
