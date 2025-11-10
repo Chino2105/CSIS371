@@ -29,9 +29,10 @@ def call_gpt(query):
         return {"media_type": [], "entities": [], "attributes": [], "time": [], "descriptions": []}
 
 def decompose_query(query):
+    # Use this for now so we don't call gpt alot.
     gpt_components = call_gpt(query)
     return gpt_components
 
 # Example
-query = "That sci-fi movie with the robot kid from the 90s"
-print(decompose_query(query))
+# query = "That sci-fi movie with the robot kid from the 90s"
+# print(decompose_query(query)) - {'media_type': ['movie'], 'entities': ['robot kid'], 'attributes': ['sci-fi'], 'time': ['90s'], 'descriptions': ['sci-fi movie', 'robot kid', '90s']}

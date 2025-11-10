@@ -1,5 +1,5 @@
-import os
-import subprocess
+from os import path
+from subprocess import run
 
 # File: pyseriniIndex.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -10,12 +10,11 @@ import subprocess
 
 index_dir = 'indexes/myindex'                       # Directory to store the index
 
-if __name__ == "__main__":
-
+def index():
     # Check if index already exists
-    if not os.path.exists(index_dir) or not os.path.exists(os.path.join(index_dir, "segments_1")):
-        subprocess.run([
-        "python", "-m", "pyserini.index.lucene",
+    if not path.exists(index_dir) or not path.exists(path.join(index_dir, "segments_1")):
+        run([
+        "python3", "-m", "pyserini.index.lucene",
         "--collection", "JsonCollection",                 
         "--input", "CORPUS_converted",                              # Input directory with JSONL files
         "--index", "indexes/myindex",                               # Output index directory
@@ -23,6 +22,3 @@ if __name__ == "__main__":
         "--threads", "12",
         "--storeDocvectors",
         ])
-
-        
-    

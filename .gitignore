@@ -10,3 +10,4 @@ CORPUS
 CORPUS_converted 
 .env
 indexes/
+.vscode
