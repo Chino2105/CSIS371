@@ -11,3 +11,4 @@ CORPUS_converted
 .env
 indexes/
 .vscode
+FormatCorpus/__pycache__
