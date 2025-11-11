@@ -18,7 +18,6 @@ def main():
         from FormatCorpus.corpusFormatConverter import convert
         convert()
 
-
     # Install Packages
     from packageInstaller import installPackages
     installPackages()
