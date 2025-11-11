@@ -1,6 +1,3 @@
-from packageInstaller import installPackages
-from pyseriniIndex import index
-from searcher import search
 from os import path
 
 # File: main.py
@@ -21,9 +18,14 @@ def main():
         from FormatCorpus.corpusFormatConverter import convert
         convert()
 
-    exit()
+
     # Install Packages
+    from packageInstaller import installPackages
     installPackages()
+
+    # install packages before importing pyserini
+    from pyseriniIndex import index
+    from searcher import search
 
     # Ensure the index is created
     index()
