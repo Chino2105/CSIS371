@@ -1,7 +1,8 @@
+from os import path
+
 from packageInstaller import installPackages
 from pyseriniIndex import index
 from searcher import search
-from os import path
 
 # File: main.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -21,7 +22,6 @@ def main():
         from FormatCorpus.corpusFormatConverter import convert
         convert()
 
-    exit()
     # Install Packages
     installPackages()
 
