@@ -8,6 +8,10 @@ from os import path
 
 def main():
 
+    # Install Packages
+    from packageInstaller import installPackages
+    installPackages()
+
     # Check for corpus split.
     if (not path.exists("./CORPUS")):
         from FormatCorpus.SplitCorpus import split
@@ -17,10 +21,6 @@ def main():
     if (not path.exists("./CORPUS_converted")):
         from FormatCorpus.corpusFormatConverter import convert
         convert()
-
-    # Install Packages
-    from packageInstaller import installPackages
-    installPackages()
 
     # install packages before importing pyserini
     from pyseriniIndex import index
