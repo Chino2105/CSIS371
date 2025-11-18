@@ -13,3 +13,4 @@ indexes/
 .vscode
 FormatCorpus/__pycache__
 venv
+.venv
