@@ -1,7 +1,7 @@
 from pyserini.search.lucene import LuceneSearcher
 
 # import queryDecomposer
-from queryDecomposerAI import decompose_query ## Use AI For Now
+from queryDecomposer import decompose_query
 
 def search():
     # Interactive search loop

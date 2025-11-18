@@ -12,3 +12,4 @@ CORPUS_converted
 indexes/
 .vscode
 FormatCorpus/__pycache__
+venv

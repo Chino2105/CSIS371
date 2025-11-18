@@ -1,5 +1,5 @@
 from os import popen, system
-
+from sys import executable
 # File: packageInstaller.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 11/5/2024
@@ -14,11 +14,11 @@ def installPackages():
 
     neededPackage = ""
 
-    with popen("pip list") as stream:
+    with popen(executable + " -m pip list") as stream:
         output = stream.read()
         for package in packages:
             if not (package in output):
                 neededPackage += " " + package
 
     if (neededPackage != ""):
-        system("pip install " + neededPackage)
+        system(executable + " -m pip install " + neededPackage)

@@ -1,5 +1,6 @@
 from os import path
 from subprocess import run
+from sys import executable
 
 # File: pyseriniIndex.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -14,7 +15,7 @@ def index():
     # Check if index already exists
     if not path.exists(index_dir) or not path.exists(path.join(index_dir, "segments_1")):
         run([
-        "python3", "-m", "pyserini.index.lucene",
+        executable, "-m", "pyserini.index.lucene",
         "--collection", "JsonCollection",                 
         "--input", "CORPUS_converted",                              # Input directory with JSONL files
         "--index", "indexes/myindex",                               # Output index directory
