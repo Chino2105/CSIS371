@@ -40,6 +40,7 @@ media_Types = {
     "podcast", "podcasts",
     "recording", "recordings",
 }
+
 def decompose_query(query):
 
     # group nouns into chunks
