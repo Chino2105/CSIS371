@@ -61,6 +61,7 @@ def decompose_query(query):
     for ent in doc.ents:
         if ent.label_ in ("DATE", "TIME"):
             time.append(ent.text)
+
     # Append Entities
     for ent in doc.ents:
         if ent.label_ in ("PERSON", "ORG", "GPE", "WORK_OF_ART"):
@@ -70,6 +71,7 @@ def decompose_query(query):
     for token in doc:
         if token.text.lower() in media_Types:
             media_type.append(token.text.lower())
+
     generic_terms = {"something", "someone", "scene", "point", "he", "she", "dude", "people"}
 
     # Append Descriptions
@@ -85,11 +87,12 @@ def decompose_query(query):
     descriptions = [d for d in descriptions if d not in entities]
     
     return {
-            "media_type": list(set(media_type)),
-            "entities": list(set(entities)),
-            "time": list(set(time)),
-            "descriptions": list(set(descriptions))
-        }
+        "media_type": sorted(set(media_type)),
+        "entities": sorted(set(entities)),
+        "time": sorted(set(time)),
+        "descriptions": sorted(set(descriptions))
+    }
+
 
 # print(decompose_query("That sci-fi movie with the robot kid from the 1990s"))
 # print(decompose_query("What's that Stephen King horror movie about a group of kids in a small town? They're all being hunted by a really scary clown that lives in the sewers."))
