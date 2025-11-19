@@ -1,6 +1,12 @@
 # Statistical parser
 import spacy
 
+# File: queryDecomposer.py
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 11/19/2024
+# Description: This program decomposes user queries into components
+# such as media type, entities, time, and descriptions using spaCy.
+
 # Load the medium English model
 try:
     nlp = spacy.load("en_core_web_md")
