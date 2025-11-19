@@ -12,15 +12,15 @@ def main():
     from packageInstaller import installPackages
     installPackages()
 
-    # Check for corpus split.
-    if (not path.exists("./CORPUS")):
-        from FormatCorpus.SplitCorpus import split
-        split()
+    #Check for corpus split.
+    #if (not path.exists("./CORPUS")):
+     #   from FormatCorpus.SplitCorpus import split
+      #  split()
 
-    # Check for corpus formatter converter
-    if (not path.exists("./CORPUS_converted")):
-        from FormatCorpus.corpusFormatConverter import convert
-        convert()
+      # Check for corpus formatter converter
+   # if (not path.exists("./CORPUS_converted")):
+    #    from FormatCorpus.corpusFormatConverter import convert
+      #   convert()
 
     # install packages before importing pyserini
     from pyseriniIndex import index
