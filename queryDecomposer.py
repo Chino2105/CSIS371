@@ -61,20 +61,28 @@ def decompose_query(query):
     for ent in doc.ents:
         if ent.label_ in ("DATE", "TIME"):
             time.append(ent.text)
+    # Append Entities
+    for ent in doc.ents:
+        if ent.label_ in ("PERSON", "ORG", "GPE", "WORK_OF_ART"):
+            entities.append(ent.text)
 
+    # Append Media Types
+    for token in doc:
+        if token.text.lower() in media_Types:
+            media_type.append(token.text.lower())
+    generic_terms = {"something", "someone", "scene", "point", "he", "she", "dude", "people"}
+
+    # Append Descriptions
     for chunk in doc.noun_chunks:
-        # Append chunck to description
-        descriptions.append(chunk.text)
+        root = chunk.root.text.lower()
+        clean_chunk = chunk.text.lower().replace("a ", "").replace("the ", "")
+        if clean_chunk not in time and root not in generic_terms:
+            # If not already captured as a named entity, treat as description
+            if clean_chunk not in entities:
+                descriptions.append(chunk.text)
 
-        # Get the main noun and check if it's a media type
-        if (chunk.root.text.lower() in media_Types):
-            media_type.append(chunk.root.text)
-        else:
-            # It's a entity
-            clean_entity = chunk.text.replace("a ", "").replace("the ", "")
 
-            if clean_entity not in time:
-                entities.append(clean_entity)
+    descriptions = [d for d in descriptions if d not in entities]
     
     return {
             "media_type": list(set(media_type)),
