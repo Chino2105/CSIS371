@@ -1,7 +1,17 @@
+import re
+
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer
 from pyserini.search.lucene import LuceneSearcher
 
 # import queryDecomposer
 from queryDecomposer import decompose_query
+
+# File: searcher.py
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 11/19/2024
+# Description: This program performs search using Pyserini and
+# incorporates query decomposition for improved search relevance.
 
 def construct_weighted_query(components, original_query):
     # Start with the original query as a baseline
@@ -21,9 +31,21 @@ def construct_weighted_query(components, original_query):
 def search():
     # Interactive search loop
     searcher = LuceneSearcher('indexes/myindex')
+    searcher.set_bm25(k1=1.2, b=0.75)
 
     input_query = input("Search query: ").strip()
     while input_query != "":
+        stop_words = set(stopwords.words('english'))
+        input_query = input_query.lower()
+        input_query = re.sub(r'[^\w\s]', '', input_query)
+
+        tokens = input_query.split()
+        tokens = [t for t in tokens if t not in stop_words]
+        stemmer = PorterStemmer()
+        tokens = [stemmer.stem(t) for t in tokens]
+
+        input_query = " ".join(tokens)
+
         # Decompose the query
         components = decompose_query(input_query)
         print("Decomposed Query Components:", components)
