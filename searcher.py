@@ -35,12 +35,14 @@ MAGENTA = "\033[35m"
 CYAN    = "\033[36m"
 
 
+import nltk
+from nltk.corpus import stopwords
 
-STOPWORDS = {
-    "a", "an", "the", "who", "is", "are", "was", "were",
-    "with", "about", "to", "for", "from", "in", "on", "of",
-    "that", "this", "it", "and", "or", "as", "by", "at",
-}
+try:
+    STOPWORDS = set(stopwords.words('english'))
+except OSError:
+    nltk.download('stopwords')
+    STOPWORDS = set(stopwords.words('english'))
 
 
 
