@@ -15,13 +15,14 @@ import shutil
 from datetime import datetime
 from gpt import sendGPT
 from pyserini.search.lucene import LuceneSearcher
-from queryDecomposerAI import decompose_query
+import queryDecomposerAI
+import queryDecomposer 
 import shutil 
 
 INDEX_DIR = 'indexes/myindex'
 
-
-
+CURRENT_COMPOSER_NAME= "ai"
+CURRENT_DECOMPOSER = queryDecomposerAI.decompose_query
 
 RESET   = "\033[0m"
 BOLD    = "\033[1m"
@@ -68,7 +69,7 @@ def build_ai_query(raw_query: str) -> tuple[str, dict]:
     If decomposition fails or gives nothing useful, we fall back to a cleaned
     version of the raw query.
     """
-    components = decompose_query(raw_query)
+    components = CURRENT_DECOMPOSER(raw_query)
 
     media = components.get("media_type", []) or []
     entities = components.get("entities", []) or []
@@ -166,6 +167,8 @@ def search():
     print("  :clear                 clear query history")
     print("  :reindex               delete + rebuild the Lucene index, then reload")
     print("  :quit / :q / :exit     exit the shell")
+    print("  :composer [ai|simple]  switch query composer (current: "
+          f"{CURRENT_COMPOSER_NAME})")
     print("  :gpt <request>         use GPT to help refine or suggest queries   ")
     print("=" * 70)
 
@@ -221,8 +224,8 @@ def search():
         for k in ("media_type", "entities", "attributes", "time", "descriptions"):
             print(f"  {k:12s}: {components.get(k, [])}")
 
-        print(f"\n[AI query] Original: {query_text!r}")
-        print(f"[AI query] BM25 uses: {bm25_query!r}")
+        print(f"\n[Your query] Original: {query_text!r}")
+        print(f"[Decomposed query] BM25 uses: {bm25_query!r}")
 
         hits = searcher.search(bm25_query, k=10)
         big_A, probs = pretty_print_results(bm25_query, hits)
@@ -254,6 +257,10 @@ Shell commands (prefix with ':'):
 
   :rerun N
       Rerun query number N from the history list (see :history).
+  
+  :composer [ai|simple]
+      Switch between different query composers.
+      Without an argument, shows the current composer.
 
   :clear
       Clear the in-memory query history. Does NOT touch the index.
@@ -269,6 +276,27 @@ Shell commands (prefix with ':'):
 Anything that does NOT start with ':' is treated as a normal search query.
 """
         )
+    def cmd_composer(arg: str):
+        
+        global CURRENT_COMPOSER_NAME, CURRENT_DECOMPOSER
+
+        name = (arg or "").strip().lower()
+        if not name:
+            print(f"[i] Current composer: {CURRENT_COMPOSER_NAME}")
+            print("    Available: ai, simple")
+            return
+
+        if name == "ai":
+            CURRENT_COMPOSER_NAME = "ai"
+            CURRENT_DECOMPOSER = queryDecomposerAI.decompose_query
+            print("[i] Switched composer to: ai (GPT-based)")
+        elif name == "simple":
+            CURRENT_COMPOSER_NAME = "simple"
+            CURRENT_DECOMPOSER = queryDecomposer.decompose_query
+            print("[i] Switched composer to: simple (rule-based)")
+        else:
+            print(f"[!] Unknown composer '{name}'. Use: ai or simple.")
+
     def cmd_gpt(arg: str):
         """
          Use the GPT helper.
@@ -283,7 +311,7 @@ Anything that does NOT start with ':' is treated as a normal search query.
                 return
 
             # Default behavior: refine the last query
-            last_query = query_history[-1]
+            last_query = query_history[-1]["raw"]
             prompt = f"""
 You are helping a user improve keyword queries for a BM25 search engine over short English text documents.
 
@@ -421,6 +449,8 @@ Return your answer as plain text.
             cmd_reindex()
         elif cmd in ("gpt", "ai", "assistant"):
             cmd_gpt(arg)
+        elif cmd == "composer":
+            cmd_composer(arg)
         elif cmd in ("quit", "q", "exit"):
             # Use SystemExit so we can cleanly break in the main loop.
             raise SystemExit
