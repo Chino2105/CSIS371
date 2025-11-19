@@ -27,6 +27,13 @@ def construct_weighted_query(components, original_query):
 
     return " ".join(query_parts)
 
+def reciprocal_rank_fusion(results, k=20, c=60):
+    scores = {}
+    for sq, hits in results.items():
+        for rank, (docid, _) in enumerate(hits):
+            scores[docid] = scores.get(docid, 0) + 1.0 / (c + rank + 1)
+    return sorted(scores.items(), key=lambda x: x[1], reverse=True)[:k]
+
 
 def search():
     # Interactive search loop
@@ -35,14 +42,17 @@ def search():
 
     input_query = input("Search query: ").strip()
     while input_query != "":
+
+        # Preprocess the query
+        input_query = input_query.encode('utf-8').decode('unicode_escape')
         stop_words = set(stopwords.words('english'))
         input_query = input_query.lower()
         input_query = re.sub(r'[^\w\s]', '', input_query)
 
         tokens = input_query.split()
         tokens = [t for t in tokens if t not in stop_words]
-        stemmer = PorterStemmer()
-        tokens = [stemmer.stem(t) for t in tokens]
+        #stemmer = PorterStemmer()
+        #tokens = [stemmer.stem(t) for t in tokens]
 
         input_query = " ".join(tokens)
 
@@ -50,12 +60,35 @@ def search():
         components = decompose_query(input_query)
         print("Decomposed Query Components:", components)
 
-        # Search the index
-        weighted_query = construct_weighted_query(components, input_query)
-        hits = searcher.search(weighted_query, k=100)  # Retrieve more results to rerank later
+        # Perform Reciprocal Rank Fusion
+        subqueries = []
+        subqueries.append(input_query)
+        for entity in components.get('entities', []):
+            subqueries.append(entity)
+        for time in components.get('time', []):
+            subqueries.append(time)
+        for desc in components.get('descriptions', []):
+            subqueries.append(desc)
+        for media in components.get('media_type', []):
+            subqueries.append(media)
 
-        if not hits:
-            print("No results found.")
-        for i, hit in enumerate(hits):
-            print(f"0 1 {hit.docid} {i+1} {hit.score:.4f} baseline")
+        # Search each subquery and collect results
+        results = {}
+        for sq in subqueries:
+            hits = searcher.search(sq, k=50)
+            results[sq] = [(hit.docid, hit.score) for hit in hits]
+
+        # Fuse results using Reciprocal Rank Fusion
+        fused = reciprocal_rank_fusion(results)
+        for i, (docid, score) in enumerate(fused):
+            print(f"0 Q0 {docid} {i+1} {score:.4f} fused")
+
+        # Search the index
+        #weighted_query = construct_weighted_query(components, input_query)
+        #hits = searcher.search(weighted_query, k=100)  # Retrieve more results to rerank later
+
+        #if not hits:
+        #    print("No results found.")
+        #for i, hit in enumerate(hits):
+        #    print(f"0 1 {hit.docid} {i+1} {hit.score:.4f} baseline")
         input_query = input("\nSearch query: ").strip()
