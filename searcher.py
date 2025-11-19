@@ -51,8 +51,6 @@ def search():
         print("Decomposed Query Components:", components)
 
         # Search the index
-        # Inside your search loop:
-        components = decompose_query(input_query)
         weighted_query = construct_weighted_query(components, input_query)
         hits = searcher.search(weighted_query, k=100)  # Retrieve more results to rerank later
 
