@@ -1,5 +1,6 @@
 import re
 
+import nltk
 from nltk.corpus import stopwords
 from nltk.stem import PorterStemmer
 from pyserini.search.lucene import LuceneSearcher
@@ -12,6 +13,12 @@ from queryDecomposer import decompose_query
 # Version: 11/19/2024
 # Description: This program performs search using Pyserini and
 # incorporates query decomposition for improved search relevance.
+
+try:
+    stop_words = set(stopwords.words('english'))
+except OSError:
+    nltk.download('stopwords')
+    stop_words = set(stopwords.words('english'))
 
 def construct_weighted_query(components, original_query):
     # Start with the original query as a baseline
@@ -45,7 +52,6 @@ def search():
 
         # Preprocess the query
         input_query = input_query.encode('utf-8').decode('unicode_escape')
-        stop_words = set(stopwords.words('english'))
         input_query = input_query.lower()
         input_query = re.sub(r'[^\w\s]', '', input_query)
 
