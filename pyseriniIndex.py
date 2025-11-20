@@ -14,6 +14,7 @@ index_dir = 'indexes/myindex'                       # Directory to store the ind
 def index():
     # Check if index already exists
     if not path.exists(index_dir) or not path.exists(path.join(index_dir, "segments_1")):
+        return
         run([
         executable, "-m", "pyserini.index.lucene",
         "--collection", "JsonCollection",                 
@@ -23,3 +24,40 @@ def index():
         "--threads", "12",
         "--storeDocvectors",
         ])
+
+
+""" FOR LOW RAM
+JDK_JAVA_OPTIONS="-Xmx4g" python -m pyserini.index.lucene \
+  --collection JsonCollection \
+  --input CORPUS_converted \
+  --index indexes/sparse_index \
+  --generator DefaultLuceneDocumentGenerator \
+  --threads 1 \
+  --storePositions --storeDocvectors --storeRaw
+  
+MPS
+python -m pyserini.encode \
+  input   --corpus CORPUS \
+  output  --embeddings indexes/dense_embeddings \
+          --to-faiss \
+  encoder --encoder sentence-transformers/all-MiniLM-L6-v2 \
+          --batch 8 \
+          --device cpu
+          
+          
+python -m pyserini.encode \
+  input   --corpus CORPUS \
+  output  --embeddings indexes/project_vectors \
+  encoder --encoder sentence-transformers/all-MiniLM-L6-v2 \
+          --batch 8 \
+          --device cpu
+
+python -m pyserini.index.lucene \
+  --collection JsonCollection \
+  --input CORPUS_converted \
+  --index indexes/tot-index \
+  --generator DefaultLuceneDocumentGenerator \
+  --threads 8 \
+  --storePositions --storeDocvectors --storeRaw \
+  --fields media_type attributes time entities descriptions
+"""

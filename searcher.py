@@ -81,7 +81,7 @@ def search():
         # Search each subquery and collect results
         results = {}
         for sq in subqueries:
-            hits = searcher.search(sq, k=50)
+            hits = searcher.search(sq, k=100)
             results[sq] = [(hit.docid, hit.score) for hit in hits]
 
         # Fuse results using Reciprocal Rank Fusion
