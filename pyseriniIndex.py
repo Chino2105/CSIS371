@@ -22,4 +22,5 @@ def index():
         "--generator", "DefaultLuceneDocumentGenerator",
         "--threads", "12",
         "--storeDocvectors",
+        "--storeRaw"
         ])
