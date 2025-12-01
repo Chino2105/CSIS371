@@ -45,7 +45,7 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
 
         # Decompose
         components = decompose_query(query)
-        print("Decomposed:", components)
+        #print("Decomposed:", components)
 
         # Weighted query
         weighted_query = construct_weighted_query(components, norm_query)
@@ -65,8 +65,8 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
 
         # Fuse
         fused = reciprocal_rank_fusion(results, k=50)
-        for i, (docid, score) in enumerate(fused):
-            print(f"0 Q0 {docid} {i+1} {score:.4f} fused")
+        # for i, (docid, score) in enumerate(fused):
+        #     print(f"0 Q0 {docid} {i+1} {score:.4f} fused")
 
         # Check expected
         exp = expected.get(qid)
