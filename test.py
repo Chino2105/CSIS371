@@ -8,7 +8,13 @@ from queryDecomposer import decompose_query
 from searcher import (construct_weighted_query, reciprocal_rank_fusion,
                       stop_words)
 
+# File: test.py
+# Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+# Version: 12/1/2025
+# Description: This program tests the searcher with query decomposition
+# against expected results for accuracy evaluation.
 
+# Load queries from JSONL file
 def load_queries(jsonl_path):
     queries = {}
     with open(jsonl_path, "r", encoding="utf-8") as f:
@@ -17,6 +23,7 @@ def load_queries(jsonl_path):
             queries[obj["query_id"]] = obj["query"]
     return queries
 
+# Load expected results from text file
 def load_results(results_path):
     expected = {}
     with open(results_path, "r", encoding="utf-8") as f:
@@ -27,6 +34,7 @@ def load_results(results_path):
                 expected[qid] = {"docid": docid, "rank": int(rank)}
     return expected
 
+# Run test for a set of queries and expected results
 def run_test(queries, expected, index_dir="indexes/myindex"):
     searcher = LuceneSearcher(index_dir)
     searcher.set_bm25(k1=1.2, b=0.75)
@@ -90,6 +98,7 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
     else:
         print("\nNo queries with expected results to evaluate.")
 
+# Run all tests in given folders
 def run_all_tests(query_folder, result_folder):
     query_files = sorted(os.listdir(query_folder))
     result_files = sorted(os.listdir(result_folder))
@@ -99,5 +108,6 @@ def run_all_tests(query_folder, result_folder):
         expected = load_results(os.path.join(result_folder, rf))
         run_test(queries, expected)
 
+# Main execution
 if __name__ == "__main__":
     run_all_tests("Test Queries", "Test Query Results")
