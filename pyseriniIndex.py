@@ -4,7 +4,7 @@ from sys import executable
 
 # File: pyseriniIndex.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
-# Version: 11/6/2024
+# Version: 11/6/2025
 # Description: This program processes a collection of documents in JSONL format, extracts text content,
 # and makes it searchable by creating a list of unique words and indexing the documents using Pyserini.
 # Results are displayed in TREC format and ranked using the BM25 algorithm.
