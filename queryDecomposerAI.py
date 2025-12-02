@@ -11,12 +11,36 @@ import gpt
 
 
 def call_gpt(query):
-    """Call your GPT wrapper with a structured prompt."""
     prompt = f"""
-    Decompose the query into JSON with keys: media_type, entities, attributes, time, descriptions.
-    - Always return lists (even if empty).
-    - Only extract short spans directly from the query (1–3 words).
+    You are an information retrieval assistant. 
+    Decompose the following query into a JSON object with these keys:
+    - media_type
+    - entities
+    - attributes
+    - time
+    - descriptions
+
+    Guidelines:
+    - Always return lists for every key (even if empty).
+    - Extract only short spans (1–3 words) directly from the query.
     - Do not repeat the full query in any field.
+    - Normalize obvious typos (e.g., 'Foriegn Film' → 'foreign film').
+    - Prefer distinctive nouns, names, or attributes over generic words.
+    - Avoid duplicates across fields.
+    - Keep values lowercase unless they are proper names.
+
+    Example:
+    Query: "George Clooney movie where a woman witnesses a murder"
+    JSON:
+    {{
+    "media_type": ["movie"],
+    "entities": ["George Clooney"],
+    "attributes": ["murder"],
+    "time": [],
+    "descriptions": ["woman witnesses"]
+    }}
+
+    Now decompose this query:
     Query: "{query}"
     JSON:
     """
@@ -31,6 +55,7 @@ def call_gpt(query):
 def decompose_query(query):
     # Use this for now so we don't call gpt alot.
     gpt_components = call_gpt(query)
+    print ("GPT Components:", gpt_components)
     return gpt_components
 
 # Example
