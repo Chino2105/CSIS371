@@ -4,15 +4,15 @@ import re
 
 from pyserini.search.lucene import LuceneSearcher
 
-from queryDecomposer import decompose_query
-from searcher import (construct_weighted_query, reciprocal_rank_fusion,
-                      stop_words)
+from queryDecomposerAI import decompose_query
+from searcher_with_filters import (construct_weighted_query,
+                                   reciprocal_rank_fusion, stop_words)
 
 # File: test.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
-# Version: 12/1/2025
-# Description: This program tests the searcher with query decomposition
-# against expected results for accuracy evaluation.
+# Version: 12/2/2025
+# Description: Tests the searcher with query decomposition against expected results
+# and computes overall accuracy across all test files.
 
 # Load queries from JSONL file
 def load_queries(jsonl_path):
@@ -43,17 +43,15 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
     correct = 0
 
     for qid, query in queries.items():
-        print(f"\n=== Testing Query {qid} ===")
         # Normalize like your searcher
-        norm_query = query.encode('utf-8').decode('unicode_escape')
+        norm_query = query.encode("utf-8").decode("unicode_escape")
         norm_query = norm_query.lower()
-        norm_query = re.sub(r'[^\w\s]', '', norm_query)
+        norm_query = re.sub(r"[^\w\s]", "", norm_query)
         tokens = [t for t in norm_query.split() if t not in stop_words]
         norm_query = " ".join(tokens)
 
         # Decompose
         components = decompose_query(query)
-        #print("Decomposed:", components)
 
         # Weighted query
         weighted_query = construct_weighted_query(components, norm_query)
@@ -66,6 +64,7 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
         subqueries.extend(components.get("time", []))
         subqueries.extend(components.get("descriptions", []))
         subqueries.extend(components.get("media_type", []))
+        subqueries.extend(components.get("attributes", []))
 
         for sq in subqueries:
             hits = searcher.search(sq, k=50)
@@ -73,14 +72,14 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
 
         # Fuse
         fused = reciprocal_rank_fusion(results, k=50)
-        # for i, (docid, score) in enumerate(fused):
-        #     print(f"0 Q0 {docid} {i+1} {score:.4f} fused")
 
         # Check expected
         exp = expected.get(qid)
         if exp:
             total += 1
-            found = next((i for i, (docid, _) in enumerate(fused) if docid == exp["docid"]), None)
+            found = next(
+                (i for i, (docid, _) in enumerate(fused) if docid == exp["docid"]), None
+            )
             if found is not None:
                 correct += 1
                 print(f"Expected doc {exp['docid']} found at fused rank {found+1}")
@@ -89,24 +88,32 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
         else:
             print("No expected result for this query")
 
-    # Final accuracy report
-    if total > 0:
-        accuracy = (correct / total) * 100
-        print(f"\n=== Summary ===")
-        print(f"Correct: {correct}/{total} queries")
-        print(f"Accuracy: {accuracy:.2f}%")
-    else:
-        print("\nNo queries with expected results to evaluate.")
+    return correct, total
 
-# Run all tests in given folders
+# Run all tests in given folders and compute overall accuracy
 def run_all_tests(query_folder, result_folder):
     query_files = sorted(os.listdir(query_folder))
     result_files = sorted(os.listdir(result_folder))
+
+    grand_total = 0
+    grand_correct = 0
+
     for qf, rf in zip(query_files, result_files):
         print(f"\n=== Running test set: {qf} with {rf} ===")
         queries = load_queries(os.path.join(query_folder, qf))
         expected = load_results(os.path.join(result_folder, rf))
-        run_test(queries, expected)
+        correct, total = run_test(queries, expected)
+        grand_total += total
+        grand_correct += correct
+
+    # Final overall accuracy report
+    if grand_total > 0:
+        accuracy = (grand_correct / grand_total) * 100
+        print(f"\n=== Overall Summary Across All Files ===")
+        print(f"Correct: {grand_correct}/{grand_total} queries")
+        print(f"Accuracy: {accuracy:.2f}%")
+    else:
+        print("\nNo queries with expected results to evaluate.")
 
 # Main execution
 if __name__ == "__main__":
