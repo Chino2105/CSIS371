@@ -1,13 +1,14 @@
 # Searcher with component filtering and attribute integration
+import json
 import re
 
 import nltk
 from nltk.corpus import stopwords
 from pyserini.search.lucene import LuceneSearcher
 
-from queryDecomposer import decompose_query
+from queryDecomposerAI import decompose_query
 
-# File: searcher_with_filters.py
+# File: searcherAI.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 # Version: 12/02/2025
 # Description: Performs search using Pyserini with query decomposition,
@@ -18,6 +19,29 @@ try:
 except OSError:
     nltk.download('stopwords')
     stop_words = set(stopwords.words('english'))
+
+# Highlight snippet with query terms in bold (**term**)
+def highlight_snippet(contents, query_terms, window=100):
+    # Anchor snippet around first match
+    anchor_idx = None
+    for term in query_terms:
+        match = re.search(r'\b' + re.escape(term) + r'\b', contents, re.IGNORECASE)
+        if match:
+            anchor_idx = match.start()
+            break
+
+    if anchor_idx is not None:
+        start = max(0, anchor_idx - 50)
+        end = min(len(contents), anchor_idx + window)
+        snippet = contents[start:end].replace("\n", " ")
+    else:
+        snippet = contents[:150].replace("\n", " ")
+
+    # Build one regex for all terms
+    pattern = r'\b(' + '|'.join(re.escape(t) for t in query_terms) + r')\b'
+    snippet = re.sub(pattern, r'**\1**', snippet, flags=re.IGNORECASE)
+
+    return snippet
 
 # --- Component Filtering ---
 def filter_components(components):
@@ -77,6 +101,7 @@ def search():
 
     input_query = input("Search query: ").strip()
     while input_query != "":
+        print()
         # Normalize query
         original_query = input_query.encode('utf-8').decode('unicode_escape')
         norm_query = original_query.lower()
@@ -87,7 +112,7 @@ def search():
         # Decompose and filter
         components = decompose_query(original_query)
         components = filter_components(components)
-        print("Filtered Components:", components)
+        #print("Filtered Components:", components)
 
         # Weighted query
         weighted_query = construct_weighted_query(components, norm_query)
@@ -109,6 +134,20 @@ def search():
         # Fuse
         fused = reciprocal_rank_fusion(results, k=50, c=100)
         for i, (docid, score) in enumerate(fused):
-            print(f"0 Q0 {docid} {i+1} {score:.4f} fused")
+            doc = searcher.doc(docid)
+            if doc is None:
+                continue
+            raw = json.loads(doc.raw())
+            contents = raw.get("contents", "")
+
+            # Title = first line before newline
+            title = contents.split("\n", 1)[0]
+
+            # Snippet = find first query term in contents
+            snippet = highlight_snippet(contents, input_query.split())
+
+            print(f"Rank {i+1} | DocID: {docid} | Score: {score:.4f}")
+            print(f"Title: {title}")
+            print(f"Snippet: {snippet}\n")
 
         input_query = input("\nSearch query: ").strip()
