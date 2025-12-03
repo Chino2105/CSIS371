@@ -86,7 +86,7 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
         else:
             print(f"Query {qid}: No expected result for this query")
 
-            return correct, total
+    return correct, total
 
 # Run all tests in given folders and compute overall accuracy
 def run_all_tests(query_folder, result_folder):
