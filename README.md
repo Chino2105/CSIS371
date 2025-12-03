@@ -1,6 +1,6 @@
 # TREC TIP OF Le Tounge 
 Group Project for CSIS371
-Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
+\nAuthors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
 
 ### Running the System
 Run the main.py file to start the system. All packages will be installed if not already. The corpus will then be formatted correctly in the jsonl format.
