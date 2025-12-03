@@ -5,8 +5,8 @@ import re
 from pyserini.search.lucene import LuceneSearcher
 
 from queryDecomposerAI import decompose_query
-from searcher_with_filters import (construct_weighted_query,
-                                   reciprocal_rank_fusion, stop_words)
+from searcherAI import (construct_weighted_query, reciprocal_rank_fusion,
+                        stop_words)
 
 # File: test.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
