@@ -55,7 +55,7 @@ def call_gpt(query):
 def decompose_query(query):
     # Use this for now so we don't call gpt alot.
     gpt_components = call_gpt(query)
-    print ("GPT Components:", gpt_components)
+    #print ("GPT Components:", gpt_components)
     return gpt_components
 
 # Example
