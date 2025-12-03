@@ -11,7 +11,7 @@ from queryDecomposerImproved import decompose_query
 
 # File: searcher.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
-# Version: 11/19/2024
+# Version: 12/3/2024
 # Description: This program performs search using Pyserini and
 # incorporates query decomposition for improved search relevance.
 

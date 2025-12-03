@@ -39,6 +39,7 @@ def clean_entities(entities):
             final.append(e.title())
     return list(set(final))
 
+# Decompose the query into components
 def decompose_query(query):
     doc = nlp(query)
 
