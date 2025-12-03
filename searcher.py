@@ -23,9 +23,18 @@ except OSError:
 
 # Highlight snippet with query terms in bold (**term**)
 def highlight_snippet(contents, query_terms, window=100):
-    # Anchor snippet around first match
+    # Filter out stopwords and very short tokens
+    meaningful_terms = [
+        t for t in query_terms
+        if t.lower() not in stop_words and len(t) > 2
+    ]
+    if not meaningful_terms:
+        # fallback: just return first 150 chars
+        return contents[:150].replace("\n", " ")
+
+    # Anchor snippet around first match of a meaningful term
     anchor_idx = None
-    for term in query_terms:
+    for term in meaningful_terms:
         match = re.search(r'\b' + re.escape(term) + r'\b', contents, re.IGNORECASE)
         if match:
             anchor_idx = match.start()
@@ -38,11 +47,12 @@ def highlight_snippet(contents, query_terms, window=100):
     else:
         snippet = contents[:150].replace("\n", " ")
 
-    # Build one regex for all terms
-    pattern = r'\b(' + '|'.join(re.escape(t) for t in query_terms) + r')\b'
+    # Build one regex for all meaningful terms
+    pattern = r'\b(' + '|'.join(re.escape(t) for t in meaningful_terms) + r')\b'
     snippet = re.sub(pattern, r'**\1**', snippet, flags=re.IGNORECASE)
 
     return snippet
+
 
 # Construct weighted query based on components
 def construct_weighted_query(components, original_query):
