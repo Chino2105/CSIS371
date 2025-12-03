@@ -4,9 +4,9 @@ import re
 
 from pyserini.search.lucene import LuceneSearcher
 
-from queryDecomposerAI import decompose_query
-from searcherAI import (construct_weighted_query, reciprocal_rank_fusion,
-                        stop_words)
+from queryDecomposerImproved import decompose_query
+from searcher import (construct_weighted_query, reciprocal_rank_fusion,
+                      stop_words)
 
 # File: test.py
 # Authors: Daniel Cater, Edin Quintana, Ryan Razzano, and Melvin Chino-Hernandez
@@ -77,18 +77,16 @@ def run_test(queries, expected, index_dir="indexes/myindex"):
         exp = expected.get(qid)
         if exp:
             total += 1
-            found = next(
-                (i for i, (docid, _) in enumerate(fused) if docid == exp["docid"]), None
-            )
+            found = next((i for i, (docid, _) in enumerate(fused) if docid == exp["docid"]), None)
             if found is not None:
                 correct += 1
-                print(f"Expected doc {exp['docid']} found at fused rank {found+1}")
+                print(f"Query {qid}: Expected doc {exp['docid']} found at fused rank {found+1}")
             else:
-                print(f"Expected doc {exp['docid']} not in fused top results")
+                print(f"Query {qid}: Expected doc {exp['docid']} not in fused top results")
         else:
-            print("No expected result for this query")
+            print(f"Query {qid}: No expected result for this query")
 
-    return correct, total
+            return correct, total
 
 # Run all tests in given folders and compute overall accuracy
 def run_all_tests(query_folder, result_folder):
