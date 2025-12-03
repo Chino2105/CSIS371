@@ -44,6 +44,21 @@ def highlight_snippet(contents, query_terms, window=100):
 
     return snippet
 
+# Construct weighted query based on components
+def construct_weighted_query(components, original_query):
+    # Start with the original query as a baseline
+    query_parts = [original_query]
+
+    # Boost entities heavily (e.g., ^4 means 4x importance)
+    for entity in components.get('entities', []):
+        query_parts.append(f'"{entity}"^4')
+
+    # Boost time slightly
+    for time in components.get('time', []):
+        query_parts.append(f'"{time}"^2')
+
+    return " ".join(query_parts)
+
 # Reciprocal Rank Fusion implementation
 def reciprocal_rank_fusion(results, k=20, c=60):
     scores = {}
@@ -63,42 +78,35 @@ def search():
 
         print()
 
-        # Preprocess the query
-        input_query = input_query.encode('utf-8').decode('unicode_escape')
-        input_query = input_query.lower()
-        input_query = re.sub(r'[^\w\s]', '', input_query)
+       # Normalize like your searcher
+        norm_query = input_query.encode("utf-8").decode("unicode_escape")
+        norm_query = norm_query.lower()
+        norm_query = re.sub(r"[^\w\s]", "", norm_query)
+        tokens = [t for t in norm_query.split() if t not in stop_words]
+        norm_query = " ".join(tokens)
 
-        tokens = input_query.split()
-        tokens = [t for t in tokens if t not in stop_words]
-        #stemmer = PorterStemmer()
-        #tokens = [stemmer.stem(t) for t in tokens]
-
-        input_query = " ".join(tokens)
-
-        # Decompose the query
+        # Decompose
         components = decompose_query(input_query)
-        #print("Decomposed Query Components:", components)
 
-        # Perform Reciprocal Rank Fusion
-        subqueries = []
-        subqueries.append(input_query)
-        for entity in components.get('entities', []):
-            subqueries.append(entity)
-        for time in components.get('time', []):
-            subqueries.append(time)
-        for desc in components.get('descriptions', []):
-            subqueries.append(desc)
-        for media in components.get('media_type', []):
-            subqueries.append(media)
+        # Weighted query
+        weighted_query = construct_weighted_query(components, norm_query)
+        weighted_hits = searcher.search(weighted_query, k=100)
+        results = {"weighted": [(hit.docid, hit.score) for hit in weighted_hits]}
 
-        # Search each subquery and collect results
-        results = {}
+        # Subqueries
+        subqueries = [norm_query]
+        subqueries.extend(components.get("entities", []))
+        subqueries.extend(components.get("time", []))
+        subqueries.extend(components.get("descriptions", []))
+        subqueries.extend(components.get("media_type", []))
+        subqueries.extend(components.get("attributes", []))
+
         for sq in subqueries:
             hits = searcher.search(sq, k=50)
             results[sq] = [(hit.docid, hit.score) for hit in hits]
 
-        # Fuse results using Reciprocal Rank Fusion
-        fused = reciprocal_rank_fusion(results, k=50, c=100)
+        # Fuse
+        fused = reciprocal_rank_fusion(results, k=50)
         for i, (docid, score) in enumerate(fused):
             doc = searcher.doc(docid)
             if doc is None:
